@@ -1,18 +1,68 @@
 import { Module } from "../lib/plugins.js";
-const MAX=99999999;
-const isBot=m=>!!(m?.isFromMe||m?.isfromMe||m?.fromMe);
-function inviteCode(s){const x=String(s||"").match(/chat\.whatsapp\.com\/([A-Za-z0-9_-]+)/i);return x?.[1]||null}
-async function targetJid(m,raw){const code=inviteCode(raw);if(code&&typeof m.conn.groupGetInviteInfo==="function"){const info=await m.conn.groupGetInviteInfo(code);return info?.id||null}const j=String(raw||"").match(/[0-9-]+@g\.us/i);return j?.[0]||null}
-async function payload(m){const q=m.quoted;if(q){const t=q.type||q.mtype||"";if(t==="imageMessage"){const b=await q.download();return {image:b,caption:q.body||""}}if(t==="videoMessage"){const b=await q.download();return {video:b,caption:q.body||""}}if(t==="audioMessage"){const b=await q.download();return {audio:b,mimetype:q?.msg?.mimetype||q?.mimetype||"audio/ogg; codecs=opus",ptt:!!q.ptt}}if(t==="stickerMessage"){const b=await q.download();return {sticker:b}}if(q.body)return {text:q.body}}
-const text=String(m.body||"").trim();return {text:text.replace(/^\.pui(?:bomb)?\s*/i,"").trim()};}
-Module({command:"rahulbomb",aliases:["rahul-bomb"],package:"rahul spc",description:"Rahul SPC single-message test sender"})(async(m)=>{
- if(!isBot(m))return m.reply("❌ This RAHUL SPC command is bot-user only.");
- const parts=String(a||"").trim().split(/\s+/);const count=Math.min(MAX,Math.max(1,Number(parts.pop())||1));const link=parts.join(" ");
- if(!link)return m.reply("Usage: .rahulbomb <group link> <1-100000>\nReply to text/media before using the command.");
- let jid;try{jid=await targetJid(m,link)}catch(e){return m.reply(`❌ Could not resolve group link: ${e?.message||e}`)}
- if(!jid)return m.reply("❌ Valid WhatsApp group link not found.");
- const data=await payload(m);if(!data?.text&&!data?.image&&!data?.video&&!data?.audio&&!data?.sticker)return m.reply("❌ Provide text or reply to media.");
- // Deliberately bounded to 1000 and parallelised only within that small limit.
- await Promise.all(Array.from({length:count},()=>m.conn.sendMessage(jid,data)));
- return m.reply(`✅ ᰔᩚRᴀʜᴜʟ⸙ completed: ${count}/${MAX} message(s) sent.`);
+
+const MAX_MESSAGES = 999999999;
+const MIN_DELAY_MS = 100;
+function inviteCode(value) {
+  return String(value || "").match(/chat\.whatsapp\.com\/([A-Za-z0-9_-]+)/i)?.[1] || null;
+}
+async function targetJid(message, raw) {
+  const code = inviteCode(raw);
+  if (code && typeof message.conn.groupGetInviteInfo === "function") {
+    const info = await message.conn.groupGetInviteInfo(code);
+    return info?.id || null;
+  }
+  return String(raw || "").match(/[0-9-]+@g\.us/i)?.[0] || null;
+}
+async function payload(message) {
+  const quoted = message.quoted;
+  if (!quoted) return null;
+  const type = String(quoted.type || quoted.mtype || "");
+  if (type === "imageMessage") {
+    const buffer = await quoted.download();
+    return buffer?.length ? { image: buffer, caption: quoted.body || quoted.caption || "" } : null;
+  }
+  if (type === "videoMessage") {
+    const buffer = await quoted.download();
+    return buffer?.length ? { video: buffer, caption: quoted.body || quoted.caption || "", mimetype: quoted?.msg?.mimetype || quoted?.mimetype || "video/mp4" } : null;
+  }
+  if (type === "audioMessage") {
+    const buffer = await quoted.download();
+    return buffer?.length ? { audio: buffer, mimetype: quoted?.msg?.mimetype || quoted?.mimetype || "audio/ogg; codecs=opus", ptt: Boolean(quoted.ptt) } : null;
+  }
+  if (type === "stickerMessage") {
+    const buffer = await quoted.download();
+    return buffer?.length ? { sticker: buffer } : null;
+  }
+  const text = String(quoted.body || "").trim();
+  return text ? { text } : null;
+}
+const isBotUser = (message) => Boolean(message?.isFromMe || message?.isfromMe || message?.fromMe);
+
+Module({ command: "rahulbomb", aliases: ["rahul-bomb"], package: "rahul spc", description: "Send a small, rate-limited test of a replied message to a group" })(async (message, argsText = "") => {
+  if (!isBotUser(message)) return message.reply("❌ This command can only be run from the linked bot account.");
+  const parts = String(argsText || "").trim().split(/\s+/).filter(Boolean);
+  const requested = Number(parts[parts.length - 1]);
+  const count = Number.isFinite(requested) && /^\d+$/.test(parts[parts.length - 1] || "") ? parts.pop() && requested : 1;
+  const safeCount = Math.max(1, Math.min(MAX_MESSAGES, Number(count) || 1));
+  const link = parts.join(" ");
+  if (!link) return message.reply(`Usage: .rahulbomb <group invite link> [1-${MAX_MESSAGES}]\nReply to the text/media you want to send before using the command.`);
+  let jid;
+  try { jid = await targetJid(message, link); }
+  catch (error) { return message.reply(`❌ Could not resolve group link: ${String(error?.message || error).slice(0, 140)}`); }
+  if (!jid) return message.reply("❌ Valid WhatsApp group invite link not found.");
+  let data;
+  try { data = await payload(message); }
+  catch (error) { return message.reply(`❌ Could not read the replied media: ${String(error?.message || error).slice(0, 140)}`); }
+  if (!data) return message.reply("❌ Reply to a text/photo/video/audio/sticker first, then run the command.");
+  let sent = 0;
+  try {
+    for (let i = 0; i < safeCount; i++) {
+      await message.conn.sendMessage(jid, data);
+      sent++;
+      if (i + 1 < safeCount) await new Promise((resolve) => setTimeout(resolve, MIN_DELAY_MS));
+    }
+  } catch (error) {
+    return message.reply(`⚠️ Sent ${sent}/${safeCount} test message(s); stopped after an error: ${String(error?.message || error).slice(0, 120)}`);
+  }
+  return message.reply(`✅ RAHULBOMB test complete: ${sent}/${safeCount} message(s) sent (maximum ${MAX_MESSAGES}, rate-limited).`);
 });
