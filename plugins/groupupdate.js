@@ -7,7 +7,7 @@ import { jidNormalizedUser } from "@whiskeysockets/baileys";
 const DEFAULT_GOODBYE = `&mention 𝐠𝐚𝐫 𝐦𝐚𝐫𝐚𝐨 🤡💔`;
 const DEFAULT_WELCOME = `&mention⁩ _❥᭄🇼‌𝐄𝐋𝐂𝐎𝐌𝐄 𝐓𝐎 𝐎𝐔𝐑 𝐆𝐑𝐎𝐔𝐏»̶̶͓͓͓̽̽̽✨_
 
-&name
+&group
 ⎯͢⎯⃝🥂⎯͢𓆰𝄣« 𝀚•🌚🍷💦⟵͓̽།།
 
 —͟͟͞͞★এটা আড্ডা মারার গ্রুপ⎯⃝🥹🍃💘𓂋⃝⃟⃟⃝⃪⃔*_
@@ -149,12 +149,12 @@ Module({
   if (!raw) {
     // read current
     const botNumber =
-      (message.conn?.user?.id && String(message.conn.user.id).split(":")[0]) ||
+      (message.conn?.user?.id && String(message.conn.user.id).split(":")[0].replace(/\D/g, "")) ||
       "bot";
     const key = `group:${groupJid}:welcome`;
     const cfg = await db.getAsync(botNumber, key, null);
     const status = cfg && typeof cfg === "object" ? toBool(cfg.status) : false;
-    return await message.sendreply?.(
+    return await message.send?.(
       `Welcome is ${status ? "✅ ON" : "❌ OFF"} for this group.`
     );
   }
@@ -164,7 +164,7 @@ Module({
   }
 
   const botNumber =
-    (message.conn?.user?.id && String(message.conn.user.id).split(":")[0]) ||
+    (message.conn?.user?.id && String(message.conn.user.id).split(":")[0].replace(/\D/g, "")) ||
     "bot";
   const key = `group:${groupJid}:welcome`;
   const cfg = { status: raw === "on" };
@@ -197,12 +197,12 @@ Module({
   const raw = (match || "").trim().toLowerCase();
   if (!raw) {
     const botNumber =
-      (message.conn?.user?.id && String(message.conn.user.id).split(":")[0]) ||
+      (message.conn?.user?.id && String(message.conn.user.id).split(":")[0].replace(/\D/g, "")) ||
       "bot";
     const key = `group:${groupJid}:goodbye`;
     const cfg = await db.getAsync(botNumber, key, null);
     const status = cfg && typeof cfg === "object" ? toBool(cfg.status) : false;
-    return await message.sendreply?.(
+    return await message.send?.(
       `Goodbye is ${status ? "✅ ON" : "❌ OFF"} for this group.`
     );
   }
@@ -212,7 +212,7 @@ Module({
   }
 
   const botNumber =
-    (message.conn?.user?.id && String(message.conn.user.id).split(":")[0]) ||
+    (message.conn?.user?.id && String(message.conn.user.id).split(":")[0].replace(/\D/g, "")) ||
     "bot";
   const key = `group:${groupJid}:goodbye`;
   const cfg = { status: raw === "on" };
@@ -223,6 +223,24 @@ Module({
       ? "✅ Goodbye ENABLED for this group"
       : "❌ Goodbye DISABLED for this group"
   );
+});
+
+/* ---------------- PROMOTE/DEMOTE EVENT NOTICES ---------------- */
+Module({ command: "pdm", aliases: ["promotedemote"], package: "group", description: "Toggle promote/demote admin event notices" })(async (message, match) => {
+  if (!message.isGroup) return message.send("❌ Use this command inside a group.");
+  await message.loadGroupInfo?.();
+  if (!(message.isAdmin || message.isGroupAdmin || message.isFromMe)) return message.send("❌ Only group admins can change PDM notices.");
+  const value = String(match || "").trim().toLowerCase();
+  const botNumber = String(message.conn?.user?.id || "bot").split(":")[0].split("@")[0].replace(/\D/g, "") || "bot";
+  const key = `group:${message.from}:pdm`;
+  if (!value) {
+    const cfg = await db.getAsync(botNumber, key, null);
+    const on = cfg && typeof cfg === "object" ? toBool(cfg.status) : false;
+    return message.send(`PDM notifications are ${on ? "✅ ON" : "❌ OFF"}. Use .pdm on/off.`);
+  }
+  if (!["on", "off"].includes(value)) return message.send("Usage: .pdm on/off");
+  await db.set(botNumber, key, { status: value === "on" });
+  return message.send(`✅ Promote/demote notifications ${value.toUpperCase()}.`);
 });
 
 /* ---------------- CUSTOM WELCOME/GOODBYE ---------------- */
@@ -236,7 +254,7 @@ Module({
   if (!message.isAdmin && !message.isFromMe) return message.send("❌ Admin/owner only.");
   const value = String(match || "").trim();
   if (!value) return message.send("Usage: .setwelcome <message>\nTags: &mention &pp &name &size &number &user &group &count &bot &owner");
-  const botNumber = String(message.conn?.user?.id || "bot").split(":")[0].split("@")[0];
+  const botNumber = String(message.conn?.user?.id || "bot").split(":")[0].split("@")[0].replace(/\D/g, "") || "bot";
   await db.set(botNumber, getGroupConfigKey(message.from, "welcome"), { status: true, custom: value });
   return message.send("✅ Custom welcome saved and enabled.");
 });
@@ -251,7 +269,7 @@ Module({
   if (!message.isAdmin && !message.isFromMe) return message.send("❌ Admin/owner only.");
   const value = String(match || "").trim();
   if (!value) return message.send("Usage: .setgoodbye <message>\nTags: &mention &pp &name &size &number &user &group &count &bot &owner");
-  const botNumber = String(message.conn?.user?.id || "bot").split(":")[0].split("@")[0];
+  const botNumber = String(message.conn?.user?.id || "bot").split(":")[0].split("@")[0].replace(/\D/g, "") || "bot";
   await db.set(botNumber, getGroupConfigKey(message.from, "goodbye"), { status: true, custom: value });
   return message.send("✅ Custom goodbye saved and enabled.");
 });
@@ -262,7 +280,7 @@ Module({
   description: "Reset custom welcome"
 })(async (message) => {
   if (!message.isGroup) return message.send("❌ Use this command inside a group.");
-  const botNumber = String(message.conn?.user?.id || "bot").split(":")[0].split("@")[0];
+  const botNumber = String(message.conn?.user?.id || "bot").split(":")[0].split("@")[0].replace(/\D/g, "") || "bot";
   await db.set(botNumber, getGroupConfigKey(message.from, "welcome"), { status: false, custom: "" });
   return message.send("♻️ Welcome reset.");
 });
@@ -273,7 +291,7 @@ Module({
   description: "Reset custom goodbye"
 })(async (message) => {
   if (!message.isGroup) return message.send("❌ Use this command inside a group.");
-  const botNumber = String(message.conn?.user?.id || "bot").split(":")[0].split("@")[0];
+  const botNumber = String(message.conn?.user?.id || "bot").split(":")[0].split("@")[0].replace(/\D/g, "") || "bot";
   await db.set(botNumber, getGroupConfigKey(message.from, "goodbye"), { status: false, custom: "" });
   return message.send("♻️ Goodbye reset.");
 });
@@ -313,9 +331,15 @@ Module({ on: "group-participants.update" })(async (_msg, event, conn) => {
 
     // compute botNumber same as commands
     const botNumber =
-      (conn?.user?.id && String(conn.user.id).split(":")[0]) || "bot";
+      (conn?.user?.id && String(conn.user.id).split(":")[0].replace(/\D/g, "")) || "bot";
     const action = String(event.action).toLowerCase();
     const botJidFull = jidNormalizedUser(conn?.user?.id);
+    let md = event.groupMetadata || null;
+    if (!md && typeof conn?.groupMetadata === "function") {
+      try { md = await conn.groupMetadata(groupJid); } catch { md = null; }
+    }
+    const pdmCfg = await db.getAsync(botNumber, `group:${groupJid}:pdm`, null);
+    const pdmEnabled = pdmCfg && typeof pdmCfg === "object" ? toBool(pdmCfg.status) : false;
 
     for (const p of event.participants) {
       const participantJid = jidNormalizedUser(
@@ -405,8 +429,8 @@ Module({ on: "group-participants.update" })(async (_msg, event, conn) => {
         }
       }
 
-      // PROMOTE / DEMOTE (kept as-is)
-      if (action === "promote" || action === "demote") {
+      // Promote/demote notices are opt-in per group via .pdm on.
+      if ((action === "promote" || action === "demote") && pdmEnabled) {
         const owner = botJidFull || null;
         const ownerMention = owner
           ? `@${owner.split("@")[0]}`
