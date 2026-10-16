@@ -1,8 +1,7 @@
-
 import { Module } from "../lib/plugins.js";
 import config from "../config.js";
 import { getTheme } from "../Themes/themes.js";
-import { jidNormalizedUser, areJidsSameUser } from "@whiskeysockets/baileys";
+import { jidNormalizedUser, areJidsSameUser } from "baileys";
 
 const theme = getTheme();
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
