@@ -4,7 +4,7 @@ import {
   generateWAMessageContent,
   generateWAMessageFromContent,
   generateMessageID,
-} from "@whiskeysockets/baileys";
+} from "baileys";
 import crypto from "crypto";
 const theme = getTheme();
 
@@ -339,7 +339,7 @@ Module({
       return message.send("❌ _Tag or reply to user(s) to kick_");
     }
 
-    const baileys = await import("@whiskeysockets/baileys");
+    const baileys = await import("baileys");
     const { jidNormalizedUser } = baileys;
     const botJid = jidNormalizedUser(message.conn.user.id);
     const validJids = [];
