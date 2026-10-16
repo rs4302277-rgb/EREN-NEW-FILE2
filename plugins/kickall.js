@@ -1,6 +1,6 @@
 // plugins/kickall.js - raw Miku MD handler, hardened for Baileys v7/LID variants
 import { Module } from "../lib/plugins.js";
-import { jidNormalizedUser, areJidsSameUser } from "@whiskeysockets/baileys";
+import { jidNormalizedUser, areJidsSameUser } from "baileys";
 
 const normalize = (jid) => { try { return jidNormalizedUser(jid); } catch { return String(jid || ""); } };
 
