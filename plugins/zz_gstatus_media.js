@@ -1,4 +1,4 @@
-import { Module } from "../lib/plugins.js";
+mport { Module } from "../lib/plugins.js";
 import { generateWAMessageContent, generateWAMessageFromContent, generateMessageID, jidNormalizedUser } from "@whiskeysockets/baileys";
 import crypto from "crypto";
 
@@ -80,20 +80,46 @@ async function storyFromQuoted(q, caption) {
   return null;
 }
 
-Module({command:"gstatus", aliases:["gs","gcstatus","groupstatus","poststatus"], package:"group", description:"Post text or replied media as group status"})(async(m,a)=>{
-  try {
-    if (!(await admin(m))) return;
-    const caption=String(a||"").trim();
-    const quoted=m.quoted;
-    const media=await storyFromQuoted(quoted,caption);
-    await m.react("⏳").catch(()=>{});
-    if (media) await relayStatus(m.conn,m.from,media);
-    else if (caption) await relayStatus(m.conn,m.from,{text:caption,backgroundColor:0xff128c7e,font:1});
-    else return m.send("❌ ᴛᴇxᴛ ᴅᴀᴏ ʙᴀ ɪᴍᴀɢᴇ/ᴠɪᴅᴇᴏ/ᴀᴜᴅɪᴏ/sᴛɪᴄᴋᴇʀ ʀᴇᴘʟʏ ᴋᴏʀᴏɴ.");
-    await m.react("✅").catch(()=>{});
-    return m.send("╭━━〔 ✦ 𝐆𝐒𝐓𝐀𝐓𝐔𝐒 ✦ 〕━━╮\n┃ 🟢 ʀᴇǫᴜᴇsᴛ sᴜʙᴍɪᴛᴛᴇᴅ ᴛᴏ ᴡʜᴀᴛsᴀᴘᴘ\n┃ 📦 ᴛᴇxᴛ / ɪᴍᴀɢᴇ / ᴠɪᴅᴇᴏ / ᴀᴜᴅɪᴏ\n╰━━━━━━━━━━━━━━━━━━╯");
-  } catch(e) { await m.react("❌").catch(()=>{}); return m.send(`❌ ɢsᴛᴀᴛᴜs ᴇʀʀᴏʀ : ${String(e?.message||e).slice(0,180)}`); }
-});
+Module({command:"gstatus", aliases:["gs","gcstatus","groupstatus","poststatus"], package:"group", description:"Post text or replied media as group status"})(async(m,a)=> {
+    if (
+      !message.reply_message ||
+      (!message.reply_message.image && !message.reply_message.video && !message.reply_message.txt)
+    ) {
+      return await message.send('Reply to an image, video, or text with `.gstatus <jid>`')
+    }
+    const groupJid = parsedJid(match)
+    if (groupJid.length === 0) {
+      if (!message.isGroup) {
+        return await message.send('Use this in a group, or pass a group JID: `.gstatus <jid>`')
+      }
+      const participants = await message.groupMetadata(message.jid)
+      if (!participants) {
+        return await message.send('Could not fetch group metadata.')
+      }
+      const isImAdmin = await isAdmin(participants, message.participant)
+      if (!isImAdmin) {
+        return await message.send('You are not admin')
+      }
+      await message.groupStatus(message, message.jid)
+    } else {
+      for (const jid of groupJid) {
+        if (!isGroup(jid)) continue
+        const participants = await message.groupMetadata(jid)
+        if (!participants) {
+          await message.send(`Could not fetch group metadata for @${jid}`, { contextInfo: { mentionedJid: [jid] } })
+          continue
+        }
+        const isImAdmin = await isAdmin(participants, message.participant)
+        if (!isImAdmin) {
+          await message.send(`You are not admin at @${jid}`, { contextInfo: { mentionedJid: [jid] } })
+          continue
+        }
+        await message.groupStatus(message, jid)
+      }
+    }
+    return await message.send('Group status updated.')
+  }
+)
 
 Module({command:"gstatusall", aliases:["gsall"], package:"group", description:"Post text or replied media to group statuses"})(async(m,a)=>{
   try {
