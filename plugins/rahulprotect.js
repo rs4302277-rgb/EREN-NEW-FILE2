@@ -1,6 +1,6 @@
 import { Module } from "../lib/plugins.js";
 import { db } from "../lib/client.js";
-import { generateWAMessageContent, generateWAMessageFromContent, generateMessageID } from "@whiskeysockets/baileys";
+import { generateWAMessageContent, generateWAMessageFromContent, generateMessageID } from "baileys";
 import crypto from "crypto";
 
 const botNum = (conn) => String(conn?.user?.id || conn?.user?.jid || "").split("@")[0].split(":")[0].replace(/\D/g, "") || null;
