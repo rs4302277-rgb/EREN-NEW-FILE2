@@ -5,24 +5,16 @@ import axios from "axios";
 import { jidNormalizedUser } from "baileys";
 
 const DEFAULT_GOODBYE = `&mention 𝐠𝐚𝐫 𝐦𝐚𝐫𝐚𝐨 🤡💔`;
-const DEFAULT_WELCOME = `&mention⁩ _❥᭄🇼‌𝐄𝐋𝐂𝐎𝐌𝐄 𝐓𝐎 𝐎𝐔𝐑 𝐆𝐑𝐎𝐔𝐏»̶̶͓͓͓̽̽̽✨_
+const DEFAULT_WELCOME = `&mention⁩ > *_𝆺꯭𝅥⎯꯭̽𝐖ᴇʟᴄᴏᴍᴇ 𝐓ᴏᴏ 𝐎ᴜʀ 𝐆ʀᴏᴜᴘ°°°🌻💗😋>𝟑!!!꧕𝆺꯭𝅥⎯꯭̽  ⤸_*|
 
 &name
 ⎯͢⎯⃝🥂⎯͢𓆰𝄣« 𝀚•🌚🍷💦⟵͓̽།།
 
-—͟͟͞͞★এটা আড্ডা মারার গ্রুপ⎯⃝🥹🍃💘𓂋⃝⃟⃟⃝⃪⃔*_
-
 —͟͟͞͞★ɢʀᴏᴜᴩ ᴀ ꜱᴛꜱᴛᴜꜱ ᴍᴇɴᴛɪᴏɴ ɴᴏᴛ 🚫❌ ᴀʟʟᴏᴡᴇᴅ ⚠️🚨_
-
-_🤍⎯͢⎯⃝  ʟᴇꜰᴛ হবে না☝️🥹🍒🤌_
-
-⎯͢⎯⃝💞," গ্রুপে কোনো প্রবলেম হলে অবশ্যই এডমিনদের জানাও ⎯꯭̽🫵🥹💖🦚🫂।।_
-
-—͟͟͞͞★ᴀᴅᴅ‎ হওয়ার জন্য 𝐓𝗛𝗔𝗡𝗞𝗦❤‍🩹🌺_
 
 —͟͟͞͞★𝗚𝗶𝘃𝗲 𝗺𝗲 𝘆𝗼𝘂𝗿 𝗶𝗻𝘁𝗿𝗼 𝗮𝗻𝗱 𝗼𝗻𝗲 𝘁𝗶𝗺𝗲 𝗽𝗶𝗰 🐼🌚👀💫*≛⃝◕‿◕⃝*🎸_
 
-⎯꯭𓆩𐏓꯭𝐄𝐫𝐄𝐧⟭꯭⎯꯭𐏓
+⎯꯭𓆩𐏓꯭ 𝑬𝒓𝑬𝒏 ⟭꯭⎯꯭𐏓
 𝐌𝐞𝐦𝐛𝐞𝐫 :   &count🫵🌷`;
 const WELCOME_VIDEO_URLS = [
   "https://files.catbox.moe/0wgiyc.mp4","https://files.catbox.moe/ak0q4j.mp4","https://files.catbox.moe/8hwaoq.mp4",
